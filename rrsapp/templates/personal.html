@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block active-home %}active{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h1 class="display-5 fw-bold">Личный кабинет</h1>
+  <p class="col-md-8 fs-4">{{ user.username }}</p>
+</div>
+<div class="container py-3">
+  <form method="POST" action="{% url 'rrsapp:logout' %}">
+    {% csrf_token %}
+    <button class="btn btn-danger btn-lg" type="submit">Выйти из аккаунта</button>
+  </form>
+</div>
+{% endblock %}

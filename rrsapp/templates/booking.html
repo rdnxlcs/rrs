@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block active-home %}active{% endblock %}
+{% block content %}
+<div style="display: none" id="json-data" data="{{ jsonerrors }}"></div>
+<div style="display: none" id="booking-message" data="{{ booking.message }}"></div>
+<div class="container">
+  <main>
+    <div class="row g-5">
+      <div class="col-md-5 col-lg-4 order-md-last">
+        <img class="w-100 rounded"
+          src="https://lh6.googleusercontent.com/proxy/P6JPh928VFSn_OTTwSfxNuasTirCc69nZRYonIVJxNvaXCduSuF6BcFrJwNlLNZvZsB84Z4PLoZhKaVPWWONoa8bdX_JUKuOHbM-tknsH6rTYcVKxthbPjV_Z2rzS49QZAwvXj0qtUIvuGSNCNFE-pRiDGEhyQixkAWyiff6O9Pw712Ac5A8JDmUgENGTW088NsdV_lCxtpJg-w">
+        <div class="py-3">
+          <h4>{{ room.name }}</h4>
+          <p><span class="badge text-bg-primary">{{ room.open_time|time:"H:i" }} – {{ room.close_time|time:"H:i" }}</span></p>
+          <p>Перерыв между бронированиями {{ room.timebreak|format_duration }}</p>
+        </div>
+      </div>
+      <div class="col-md-7 col-lg-8">
+        <div class="">
+          <h1 class="display-5 fw-bold">{{ room.name }}</h1>
+          <p class="col-md-8 fs-4">Бронирование помещения</p>
+        </div>
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="firstName" class="form-label">Дата и время бронирования</label>
+              {{ form.start_time }}
+              <div class="invalid-feedback">
+                {% for error in errors.start_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+                {{ booking.message }}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="lastName" class="form-label">Дата и время окончания</label>
+              {{ form.end_time }}
+              <div class="invalid-feedback">
+                {% for error in errors.end_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-4">
+              <label for="lastName" class="form-label">Повторение</label>
+              {{ form.recurrence_type }}
+            </div>
+
+            <div class="col-sm-4">
+              <label for="lastName" class="form-label">Интервал</label>
+              <div class="input-group">
+                {{ form.interval }}
+                <span class="input-group-text" id="basic-addon2">нед.</span>
+              </div>
+            </div>
+
+            <div class="col-sm-4">
+              <label for="lastName" class="form-label">Повторить</label>
+              <div class="input-group">
+                {{ form.repeats }}
+                <span class="input-group-text" id="basic-addon2">раз</span>
+              </div>
+            </div>
+
+
+
+            <div class="col-sm-12">
+              <small class="text-body-secondary">Приходит Новодворская ночью к себе в подъезд - а там бутылки разбитые
+                лежат и нассано. Поморщилась Валерия Ильинична, подумала про себя "Ради великой и свободной России нам,
+                либералам, можно и не такое перетерпеть!" - и пошла мимо, домой.
+                Идёт на следующую ночь она же в свой же подъезд - а там нассано, насрано, лежат бутылки разбитые, окурки
+                и дохлые крысы. Передёрнуло Валерию Ильиничну, но подумала про себя "Ради великой и свободной России
+                нам, либералам, можно даже такое перетерпеть!" - и пошла мимо, домой.
+                Идёт снова она же снова туда же на третий день - а там насрано, нассано, дохлые крысы лежат, бутылки
+                разбитые, и гандоны со шприцами. Чуть не сблевала и едва не обделалась Валерия Ильинична, подумала про
+                себя "Ради великой и свободной России нам, либералам, можно даже такое с трудом, но вытерпеть!" - и
+                пошла мимо, домой.
+                А той ночью её дом взорвали нахер. Ну и славненько! Ради великой и свободной России нам, рабочим и
+                коммунистам, можно и без Новодворской потерпеть!</small>
+            </div>
+
+            <div class="col-sm-12 byweeks" hidden>
+              <label for="lastName" class="form-label">Настроить</label>
+              <div class="row g-1">
+                {% for day in week_days %}
+                <div class="col-auto">
+                  <input type="checkbox" value="{{ forloop.counter }}" class="btn-check week-check"
+                    id="week-check-{{ day }}" autocomplete="off">
+                  <label class="btn btn-outline-primary" for="week-check-{{ day }}">{{ day }}</label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-12 bymonths" hidden>
+              <label for="lastName" class="form-label">Настроить</label>
+              <div class="row g-1">
+                {% for day in days %}
+                <div class="col-auto">
+                  <input type="checkbox" value="{{ forloop.counter }}" class="btn-check month-check" id="month-check-{{ day }}" autocomplete="off">
+                  <label class="btn btn-outline-primary" for="month-check-{{ day }}" style="width: 42.45px;">{{ day }}</label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="username" class="form-label">Комментарий</label>
+              {{ form.comment }}
+              <div class="invalid-feedback">
+                Your username is required.
+              </div>
+            </div>
+
+            {{ form.selected_days }}
+
+            <hr class="my-4">
+
+            <button class="w-100 btn btn-primary btn-lg" type="submit">Забронировать</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  function loadJson(selector) {
+    return JSON.parse(document.querySelector(selector).getAttribute('data'));
+  }
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (() => {
+    'use strict'
+
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('.needs-validation')
+    var errors = loadJson('#json-data');
+    var booking_message = document.querySelector('#booking-message').getAttribute('data');
+
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      for (let i = 0; i < Object.values(errors).length; i++) {
+        if (Object.values(errors)[i].length != 0) {
+          form[Object.keys(errors)[i]].classList.add('is-invalid')
+        }
+      }
+    })
+
+    if (booking_message != '') {
+      forms[0]['start_time'].classList.add('is-invalid')
+    }
+
+  })()
+
+  function recurrence_type(select) {
+    console.log(select.value)
+    switch (select.value) {
+      case 'no':
+        document.querySelector('.byweeks').setAttribute('hidden', 'true')
+        document.querySelector('.bymonths').setAttribute('hidden', 'true')
+
+        document.querySelector('.interval').setAttribute('disabled', 'true')
+        document.querySelector('.repeats').setAttribute('disabled', 'true')
+        break
+      case 'bydays':
+        document.querySelector('.byweeks').setAttribute('hidden', 'true')
+        document.querySelector('.bymonths').setAttribute('hidden', 'true')
+
+        document.querySelector('.interval').removeAttribute('disabled')
+        document.querySelector('.repeats').removeAttribute('disabled')
+        break
+      case 'byweeks':
+        document.querySelector('.byweeks').removeAttribute('hidden')
+        document.querySelector('.bymonths').setAttribute('hidden', 'true')
+
+        document.querySelector('.interval').removeAttribute('disabled')
+        document.querySelector('.repeats').removeAttribute('disabled')
+        break
+      case 'bymonths':
+        document.querySelector('.byweeks').setAttribute('hidden', 'true')
+        document.querySelector('.bymonths').removeAttribute('hidden')
+
+        document.querySelector('.interval').removeAttribute('disabled')
+        document.querySelector('.repeats').removeAttribute('disabled')
+        break
+    }
+  }
+
+  function getSelectedDays(checkClass) {
+    const selectedDays = [];
+    const checkboxes = document.querySelectorAll(checkClass);
+
+    checkboxes.forEach(checkbox => {
+      if (checkbox.checked) {
+        selectedDays.push(parseInt(checkbox.value)); // Добавляем значение (число) в массив
+      }
+    });
+
+    return selectedDays; // Возвращаем массив
+  }
+
+  // Функция для обновления кнопок
+  function updateButtonStyles(checkClass) {
+    const checkboxes = document.querySelectorAll(checkClass);
+
+    checkboxes.forEach(checkbox => {
+      const label = document.querySelector(`label[for="${checkbox.id}"]`);
+      if (checkbox.checked) {
+        label.classList.remove('btn-outline-primary'); // Убираем класс для невидимого состояния
+        label.classList.add('btn-primary'); // Добавляем класс для видимого состояния
+      } else {
+        label.classList.remove('btn-primary'); // Убираем класс для видимого состояния
+        label.classList.add('btn-outline-primary'); // Добавляем класс для невидимого состояния
+      }
+    });
+  }
+
+  // Слушатель событий для чекбоксов
+  document.querySelectorAll('.week-check').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      updateButtonStyles('.week-check'); // Обновляем стиль кнопок при изменении чекбокса
+      const selectedDays = getSelectedDays('.week-check'); // Получаем массив выбранных дней
+      console.log('Выбранные дни недели:', selectedDays); // Выводим в консоль для проверки
+      document.querySelectorAll('.selected-days')[0].value = JSON.stringify(selectedDays)
+    });
+  });
+
+  document.querySelectorAll('.month-check').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      updateButtonStyles('.month-check'); // Обновляем стиль кнопок при изменении чекбокса
+      const selectedDays = getSelectedDays('.month-check'); // Получаем массив выбранных дней
+      console.log('Выбранные дни месяца:', selectedDays); // Выводим в консоль для проверки
+      document.querySelectorAll('.selected-days')[0].value = JSON.stringify(selectedDays)
+    });
+  });
+
+  document.querySelector('.recurrence_type').onchange = function () { recurrence_type(document.querySelector('.recurrence_type')) }
+</script>
+
+{% endblock %}

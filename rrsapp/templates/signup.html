@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>rrs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div style="display: none" id="json-data" data="{{ jsonerrors }}"></div>
+  <div class="d-flex flex-column modal modal-sheet position-static d-block bg-body-secondary p-4 py-md-5" tabindex="-1"
+    role="dialog" id="modalSignin" style="height: 100vh;">
+    <div class="h-100"></div>
+    <div class="modal-dialog" role="document">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header p-5 pb-4 border-bottom-0">
+          <h1 class="fw-bold mb-0 fs-2">Зарегистрируйтесь</h1>
+        </div>
+
+        <div class="modal-body p-5 pt-0">
+          <form method="POST" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="form-floating mb-3">
+              {{ form.username }}
+              <label for="floatingInput">Имя пользователя</label>
+              <div class="invalid-feedback">
+                {% for error in errors.username %}
+                  {% for text in error %}
+                    {{ text }}<br>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+            <div class="form-floating mb-3">
+              {{ form.password1 }}
+              <label for="floatingPassword1">Пароль</label>
+              <div class="invalid-feedback">
+                {% for error in errors.password1 %}
+                  {% for text in error %}
+                    {{ text }}<br>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+            <div class="form-floating mb-3">
+              {{ form.password2 }}
+              <label for="floatingPassword2">Пароль ещё раз</label>
+              <div class="invalid-feedback">
+                {% for error in errors.password2 %}
+                  {% for text in error %}
+                    {{ text }}<br>
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+            <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Зарегистрироваться</button>
+            <small class="text-body-secondary"><a href="/signin">Войдите</a>, если у Вас уже есть аккаунт</small>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="h-100"></div>
+  </div>
+  <footer class="text-center py-4">
+    <div class="container">
+      <div class="row row-cols-1 row-cols-lg-3">
+        <div class="col">
+          <p class="text-muted my-2">Система Бронирования Помещений</p>
+        </div>
+        <div class="col">
+          <ul class="list-inline my-2">
+            <li class="list-inline-item me-4">
+              <div class="bs-icon-circle bs-icon-primary bs-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24px"
+                  height="24px" fill="currentColor" viewBox="0 0 56 58">
+                  <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                    <g id="Group" transform="translate(0.010133, 0.989011)" fill="#000">
+                      <path
+                        d="M55.7211274,31.8634588 L49.4689185,31.8634588 C47.6629596,42.1500322 38.6859705,49.8913651 27.9030224,49.8068758 C15.8844182,49.7223865 6.16814771,39.8476985 6.25263702,27.8290943 C6.33712633,15.8104901 16.2118143,6.09421957 28.2304185,6.17870887 C39.0133666,6.26319818 47.821377,14.1629486 49.5534078,24.4495219 L55.8056167,24.5340112 C54.0735859,10.7833762 42.4668671,0.0849174676 28.2304185,-1.19832024e-15 C12.7583138,-0.0840611503 0.158845613,12.3464284 -1.19949277e-15,27.8290943 C-0.0840611503,43.301199 12.3464284,55.9006672 27.8290943,56.0590846 C42.0655428,56.0590846 53.8412403,45.6035327 55.7316886,31.8528976 L55.7211274,31.8634588 Z"
+                        id="Path"></path>
+                      <g transform="translate(12.272500, 13.909481)" id="Path">
+                        <path
+                          d="M15.8734289,22.7381853 L15.8734289,30.3105396 L18.7566266,30.3105396 L18.7566266,22.4952785 C18.3447412,22.5797678 17.8483665,22.6642571 17.3519918,22.7381853 C16.7711278,22.7381853 16.3592424,22.8226746 15.8734289,22.7381853 Z">
+                        </path>
+                        <path
+                          d="M15.8734289,6.92812333 L15.8734289,8.49117555 L15.8734289,8.49117555 L15.8734289,17.9539781 C16.3698036,17.9539781 16.8661783,17.8694888 17.2780637,17.8694888 C17.7744384,17.8694888 18.2708131,17.7005102 18.6826984,17.7005102 L18.6826984,9.63178122 C23.3718551,10.3710627 26.5824488,12.3460003 26.5824488,14.1625204 C26.5824488,16.4648541 21.4814068,19.0206557 14.5638446,19.0206557 C7.64628246,19.0206557 2.54524043,16.4648541 2.54524043,14.1625204 C2.54524043,12.2720721 6.25220886,10.1281559 11.5222295,9.55785307 C11.5222295,9.55785307 11.6067188,9.55785307 11.6067188,9.55785307 C12.1030935,9.55785307 12.5994682,9.55785307 13.0113536,9.47336376 L13.0113536,9.38887446 L13.0113536,9.38887446 L13.0113536,6.91756217 L13.0113536,6.91756217 L13.0113536,0 L10.1281559,0 L10.1281559,7.24495824 C8.97698907,7.41393686 7.91031155,7.65684362 6.91756217,7.98423969 L6.91756217,7.98423969 C2.71421905,9.21989584 0,11.5222295 0,14.2364486 C0,18.4397917 6.25220886,21.5658961 14.5744058,21.5658961 C14.5744058,21.5658961 14.5744058,21.5658961 14.6588951,21.5658961 C14.6588951,21.5658961 14.6588951,21.5658961 14.7433844,21.5658961 C15.6516445,21.5658961 16.6338327,21.4814068 17.4576035,21.3969175 L17.4576035,21.3969175 C19.2635624,21.2279389 20.911104,20.9005428 22.3157387,20.4886574 L22.3157387,20.4886574 C26.5190818,19.2530013 29.2333009,16.9506676 29.2333009,14.2364486 C29.1488116,10.2020841 23.5513949,7.16046893 15.8945512,6.90700101 L15.8734289,6.92812333 Z">
+                        </path>
+                      </g>
+                    </g>
+                  </g>
+                </svg></div>
+            </li>
+            <li class="list-inline-item">
+              <div class="bs-icon-circle bs-icon-primary bs-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24px"
+                  height="24px" fill="currentColor" viewBox="0 0 16 16" class="bi bi-instagram">
+                  <path
+                    d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z">
+                  </path>
+                </svg></div>
+            </li>
+          </ul>
+        </div>
+        <div class="col">
+          <ul class="list-inline my-2">
+            <li class="list-inline-item"></li>
+            <li class="list-inline-item"><a class="link-secondary" href="#">created by rdnxlcs</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+<script>
+  function loadJson(selector) {
+    return JSON.parse(document.querySelector(selector).getAttribute('data'));
+  }
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (() => {
+    'use strict'
+
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('.needs-validation')
+    var errors = loadJson('#json-data');
+
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      for (let i = 0; i < Object.values(errors).length; i++) {
+        if (Object.values(errors)[i].length != 0) {
+          form[Object.keys(errors)[i]].classList.add('is-invalid')
+        }
+        else {
+          form[Object.keys(errors)[i]].classList.add('is-valid')
+        } 
+      }
+    })
+  })()
+</script>
+
+</html>
