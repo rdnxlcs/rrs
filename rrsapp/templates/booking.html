@@ -5,18 +5,25 @@
 {% block active-home %}active{% endblock %}
 {% block content %}
 <div style="display: none" id="json-data" data="{{ jsonerrors }}"></div>
-<div style="display: none" id="booking-message" data="{{ booking.message }}"></div>
-<div class="container">
+<div style="display: none" id="booking-message" data="{{ jsonbookings }}"></div>
+<div class="container py-5">
   <main>
     <div class="row g-5">
       <div class="col-md-5 col-lg-4 order-md-last">
         <img class="w-100 rounded"
-          src="https://lh6.googleusercontent.com/proxy/P6JPh928VFSn_OTTwSfxNuasTirCc69nZRYonIVJxNvaXCduSuF6BcFrJwNlLNZvZsB84Z4PLoZhKaVPWWONoa8bdX_JUKuOHbM-tknsH6rTYcVKxthbPjV_Z2rzS49QZAwvXj0qtUIvuGSNCNFE-pRiDGEhyQixkAWyiff6O9Pw712Ac5A8JDmUgENGTW088NsdV_lCxtpJg-w">
+          src="/{{ room.image }}">
         <div class="py-3">
-          <h4>{{ room.name }}</h4>
-          <p><span class="badge text-bg-primary">{{ room.open_time|time:"H:i" }} – {{ room.close_time|time:"H:i" }}</span></p>
-          <p>Перерыв между бронированиями {{ room.timebreak|format_duration }}</p>
+          <div class="d-flex justify-content-between">
+            <h4>{{ room.name }}</h4>
+            <p><span class="badge text-bg-primary">{{ room.open_time|time:"H:i" }} – {{ room.close_time|time:"H:i" }}</span></p>
+          </div>
+          {% if room.timebreak %}
+          <p><span class="badge text-bg-danger">перерыв {{ room.timebreak|format_duration }}</span></p>
+          {% endif %}
         </div>
+        <p>
+          {{ room.comment }}
+        </p>
       </div>
       <div class="col-md-7 col-lg-8">
         <div class="">
@@ -35,7 +42,12 @@
                 {{ text }}<br>
                 {% endfor %}
                 {% endfor %}
-                {{ booking.message }}
+
+                {% for error in bookings.start_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
               </div>
             </div>
 
@@ -58,35 +70,27 @@
 
             <div class="col-sm-4">
               <label for="lastName" class="form-label">Интервал</label>
-              <div class="input-group">
-                {{ form.interval }}
-                <span class="input-group-text" id="basic-addon2">нед.</span>
+              {{ form.interval }}
+              <div class="invalid-feedback">
+                {% for error in bookings.interval %}
+                {{ error }}<br>
+                {% endfor %}
               </div>
             </div>
 
             <div class="col-sm-4">
               <label for="lastName" class="form-label">Повторить</label>
-              <div class="input-group">
-                {{ form.repeats }}
-                <span class="input-group-text" id="basic-addon2">раз</span>
+              {{ form.repeats }}
+              <div class="invalid-feedback">
+                {% for error in bookings.repeats %}
+                {{ error }}<br>
+                {% endfor %}
               </div>
             </div>
 
 
-
             <div class="col-sm-12">
-              <small class="text-body-secondary">Приходит Новодворская ночью к себе в подъезд - а там бутылки разбитые
-                лежат и нассано. Поморщилась Валерия Ильинична, подумала про себя "Ради великой и свободной России нам,
-                либералам, можно и не такое перетерпеть!" - и пошла мимо, домой.
-                Идёт на следующую ночь она же в свой же подъезд - а там нассано, насрано, лежат бутылки разбитые, окурки
-                и дохлые крысы. Передёрнуло Валерию Ильиничну, но подумала про себя "Ради великой и свободной России
-                нам, либералам, можно даже такое перетерпеть!" - и пошла мимо, домой.
-                Идёт снова она же снова туда же на третий день - а там насрано, нассано, дохлые крысы лежат, бутылки
-                разбитые, и гандоны со шприцами. Чуть не сблевала и едва не обделалась Валерия Ильинична, подумала про
-                себя "Ради великой и свободной России нам, либералам, можно даже такое с трудом, но вытерпеть!" - и
-                пошла мимо, домой.
-                А той ночью её дом взорвали нахер. Ну и славненько! Ради великой и свободной России нам, рабочим и
-                коммунистам, можно и без Новодворской потерпеть!</small>
+              <small class="text-body-secondary">Поле 'Интервал' фактически означает повторение бронирования каждый N-ый день</small>
             </div>
 
             <div class="col-sm-12 byweeks" hidden>
@@ -117,9 +121,6 @@
             <div class="col-12">
               <label for="username" class="form-label">Комментарий</label>
               {{ form.comment }}
-              <div class="invalid-feedback">
-                Your username is required.
-              </div>
             </div>
 
             {{ form.selected_days }}
@@ -135,6 +136,9 @@
 </div>
 
 <script>
+  recurrence_type(document.querySelector('.recurrence_type'))
+
+
   function loadJson(selector) {
     return JSON.parse(document.querySelector(selector).getAttribute('data'));
   }
@@ -145,7 +149,7 @@
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     const forms = document.querySelectorAll('.needs-validation')
     var errors = loadJson('#json-data');
-    var booking_message = document.querySelector('#booking-message').getAttribute('data');
+    var booking_message = loadJson('#booking-message');
 
     // Loop over them and prevent submission
     Array.from(forms).forEach(form => {
@@ -156,9 +160,13 @@
       }
     })
 
-    if (booking_message != '') {
-      forms[0]['start_time'].classList.add('is-invalid')
-    }
+    Array.from(forms).forEach(form => {
+      for (let i = 0; i < Object.values(booking_message).length; i++) {
+        if (Object.values(booking_message)[i].length != 0) {
+          form[Object.keys(booking_message)[i]].classList.add('is-invalid')
+        }
+      }
+    })
 
   })()
 
@@ -244,7 +252,7 @@
     });
   });
 
-  document.querySelector('.recurrence_type').onchange = function () { recurrence_type(document.querySelector('.recurrence_type')) }
+  document.querySelector('.recurrence_type').onchange = function () { recurrence_type(document.querySelector('.recurrence_type'))}
 </script>
 
 {% endblock %}

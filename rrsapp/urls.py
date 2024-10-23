@@ -6,6 +6,8 @@ app_name = 'rrsapp'
 
 urlpatterns = [
   path('', views.home, name='home'),
+  path('rooms', views.rooms, name='rooms'),
+  path('about', views.about, name='about'),
   path('personal', views.personal, name='personal'),
   path('booking/<int:room_id>/', views.booking, name='booking'),
   path('signin', views.signin, name='signin'),

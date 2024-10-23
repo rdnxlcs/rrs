@@ -1,7 +1,8 @@
 class RoomAvailability:
-    def __init__(self, availability, message):
+    def __init__(self, availability, message, field):
         self.availability = availability
         self.message = message
+        self.field = field
 
 import datetime
 from .models import Booking
@@ -10,45 +11,44 @@ import calendar
 import json
 import pprint
 
-def is_room_available(user, room, start_time, end_time, bookings): # Готово
-    if not is_within_working_hours(room, start_time, end_time):
-        return RoomAvailability(False, f"Комната {room.name} доступна с {room.open_time.strftime('%H:%M')} до {room.close_time.strftime('%H:%M')}")
+def is_room_available(user, room, booking, bookings): # Готово
+    print('is_room_available', booking.start_time)
+    if not is_within_working_hours(room, booking.start_time, booking.end_time):
+        return RoomAvailability(False, f"Комната {room.name} доступна с {room.open_time.strftime('%H:%M')} до {room.close_time.strftime('%H:%M')}", 'start_time')
     if not can_user_book_more(user, bookings):
-        return RoomAvailability(False, f"Пользователь {user.name} достиг лимита на бронирования")
-    for booking in bookings.filter(room=room):
-        if (start_time < booking.end_time and end_time > booking.start_time):
-            return RoomAvailability(False, f"Помещение '{room.name}' занято на {start_time.strftime('%-d %B %Y %H:%M')}")
-        elif (start_time < booking.end_time + room.timebreak and end_time > booking.start_time - room.timebreak):
+        return RoomAvailability(False, f"Пользователь {user.name} достиг лимита на бронирования", 'start_time')
+    for b in bookings.filter(room=room):
+        if (booking.start_time < b.end_time and booking.end_time > b.start_time):
+            return RoomAvailability(False, f"Помещение '{room.name}' занято на {booking.start_time.strftime('%-d %B %Y %H:%M')}", 'start_time')
+        elif (booking.start_time < b.end_time + room.timebreak and booking.end_time > b.start_time - room.timebreak):
             return RoomAvailability(False, f"Между бронированиями команты '{room.name}' необходим перерыв")
-    return RoomAvailability(True, f"Бронирование комнаты '{room.name}' создано на {start_time.strftime('%-d %B %Y %H:%M')}")
+    return RoomAvailability(True, f"Бронирование комнаты '{room.name}' создано на {booking.start_time.strftime('%-d %B %Y %H:%M')}", '')
 
-def create_booking(user, room, form, bookings):
-    if form.cleaned_data['recurrence_type'] == 'no':
-        create_single_booking(user, room, form, bookings)
-        form.cleaned_data['start_time'] += datetime.timedelta(days=1)
-        form.cleaned_data['end_time'] += datetime.timedelta(days=1)
-        create_single_booking(user, room, form, bookings)
-    elif form.cleaned_data['recurrence_type'] == 'bydays':
-        create_daily_recurrence_bookings(user, room, form, bookings)
-    elif form.cleaned_data['recurrence_type'] == 'byweeks':
-        create_weekly_recurrence_bookings(user, room, form, bookings)
-    elif form.cleaned_data['recurrence_type'] == 'bymonths':
-        create_monthly_recurrence_bookings(user, room, form, bookings)
+def create_booking(user, room, booking, recurrence_type, interval, repeats, selected_days, bookings):
+    if recurrence_type != 'no' and (repeats == 0 or interval == 0):
+        created_bookings = []
+        if repeats == 0:
+            created_bookings.append(RoomAvailability(False, 'Количество повторений должно быть больше 0', 'repeats'))
+        if interval == 0:
+            created_bookings.append(RoomAvailability(False, 'Интервал должен быть больше 0', 'interval'))
+        return created_bookings
+
+    if recurrence_type == 'no':
+        created_bookings = [create_single_booking(user, room, booking, bookings)]
+    elif recurrence_type == 'bydays':
+        created_bookings = create_daily_recurrence_bookings(user, room, booking, interval, repeats, bookings)
+    elif recurrence_type == 'byweeks':
+        created_bookings = create_weekly_recurrence_bookings(user, room, booking, interval, repeats, selected_days, bookings) 
+    elif recurrence_type == 'bymonths':
+        created_bookings = create_monthly_recurrence_bookings(user, room, booking, interval, repeats, selected_days, bookings)
+    return created_bookings
         
 
 
-def create_single_booking(user, room, form, bookings): # Готово
-    start_time = form.cleaned_data['start_time']
-    end_time = form.cleaned_data['end_time']
-    room_availabilityis = is_room_available(user, room, start_time, end_time, bookings)
+def create_single_booking(user, room, booking, bookings): # Готово
+    room_availabilityis = is_room_available(user, room, booking, bookings)
     if room_availabilityis.availability:
-        booking = form.save(commit=False) # Создаём объект бронирования, но не сохраняем его
-        booking.start_time = start_time
-        booking.end_time = end_time
-        print(booking.start_time, booking.end_time)
-        booking.user = user # Присваиваем пользователя из текущей сессии
-        booking.room = room # Привязываем бронирование к выбранной комнате
-
+        booking.pk = None
         booking.save()
     print(room_availabilityis.availability, room_availabilityis.message)
     return room_availabilityis
@@ -56,112 +56,81 @@ def create_single_booking(user, room, form, bookings): # Готово
 def can_user_book_more(user, bookings): # Готово
     return len(bookings.filter(user=user)) < user.max_bookings
 
+def create_daily_recurrence_bookings(user, room, booking, interval, repeats, bookings):
 
-def create_daily_recurrence_bookings(user, room, form, bookings):
-    """
-    Функция для создания повторяющихся бронирований по дням.
-    
-    :param room: Room object (комната, которую бронируем)
-    :param start_time: datetime, начало первого бронирования
-    :param end_time: datetime, конец первого бронирования
-    :param interval: int, количество дней между сериями повторений
-    :param repeat_count: int, сколько раз бронирование повторяется подряд
-    :param comment: str, комментарий к бронированию
-    """
-    # Список для всех бронирований
-    start_time = form.cleaned_data['start_time']
-    end_time = form.cleaned_data['end_time']
-    repeats = form.cleaned_data['repeats']
-    interval = form.cleaned_data['interval']
-
-    # Обернем в транзакцию, чтобы все бронирования были сохранены или отменены в случае ошибки
-
-        # Основной цикл для создания бронирований
-    current_start_time = start_time
-    current_end_time = end_time
-
-    for repeat in range(repeats):
-        # Создаем каждое бронирование
-        form.cleaned_data['start_time'] = current_start_time
-        form.cleaned_data['end_time'] = current_end_time
-
-        create_single_booking(user, room, form, bookings)
-
-        # Обновляем время для следующего цикла (добавляем интервал)
-        current_start_time += datetime.timedelta(days=interval)
-        current_end_time += datetime.timedelta(days=interval)
-
-    return bookings
-
-def create_weekly_recurrence_bookings(user, room, form, bookings):
-    """
-    Функция для создания повторяющихся бронирований по неделям.
-    
-    :param room: Room object (комната, которую бронируем)
-    :param form: Форма с данными бронирования
-    :param user: Пользователь, который делает бронирование
-    :param bookings: Список, куда добавляются созданные бронирования
-    :return: список созданных бронирований
-    """
-    # Получаем данные из формы
-    start_time = form.cleaned_data['start_time']
-    end_time = form.cleaned_data['end_time']
-    repeats = form.cleaned_data['repeats']  # Количество повторений
-    interval = form.cleaned_data['interval']  # Интервал между повторениями (в неделях)
-    weekdays = json.loads(form.cleaned_data['selected_days'])  # Массив с днями недели, например, [0, 2, 4] (понедельник, среда, пятница)
-    weekdays = [day - 1 for day in weekdays]
-    
-    # Обернем в транзакцию для атомарности
+    created_bookings = []
     with transaction.atomic():
+        for repeat in range(int(repeats)):
+
+            created_booking = create_single_booking(user, room, booking, bookings)
+
+            created_bookings.append(created_booking)
+
+            booking.start_time += datetime.timedelta(days=interval)
+            booking.end_time += datetime.timedelta(days=interval)
+
+    return created_bookings
+
+def create_weekly_recurrence_bookings(user, room, booking, interval, repeats, selected_days, bookings):
+    weekdays = [day - 1 for day in selected_days] # Массив с днями недели, например, [0, 2, 4] (понедельник, среда, пятница)
+    created_bookings = []
+    start = booking.start_time
+    end = booking.end_time
+
+    with transaction.atomic():
+        # Заполняем оставшуюся неделю
+        for day in weekdays:
+            day_offset = day - start.weekday()
+            if day_offset >= 0:
+                booking.start_time = start + datetime.timedelta(days=day_offset)
+                booking.end_time = end + datetime.timedelta(days=day_offset)
+
+                created_booking = create_single_booking(user, room, booking, bookings)
+                created_bookings.append(created_booking)
+
+        start += datetime.timedelta(weeks=interval-1)
+        end += datetime.timedelta(weeks=interval-1)
+
         # Основной цикл для создания серий бронирований
-        for repeat in range(repeats):
+        for repeat in range(int(repeats) - 1):
             # Вычисляем смещение по неделям для текущей серии
             week_offset = repeat * interval
             
             # Итерируемся по дням недели, когда должно быть событие
             for day in weekdays:
-                # Вычисляем дату для каждого дня недели в этой серии
-                current_start_time = start_time + datetime.timedelta(weeks=week_offset) + datetime.timedelta(days=(day - start_time.weekday()) % 7)
-                current_end_time = end_time + datetime.timedelta(weeks=week_offset) + datetime.timedelta(days=(day - start_time.weekday()) % 7)
 
-                # Убедимся, что текущее время находится в будущем (если нет, пропускаем)
-                if current_start_time >= datetime.datetime.now():
-                    form.cleaned_data['start_time'] = current_start_time
-                    form.cleaned_data['end_time'] = current_end_time
-                    # Создаем бронирование на вычисленное время
-                    create_single_booking(user, room, form, bookings)
+                day_offset = 7 - (start.weekday() - day)
+                
 
-    return bookings
+                booking.start_time = start + datetime.timedelta(weeks=week_offset, days=day_offset)
+                booking.end_time = end + datetime.timedelta(weeks=week_offset, days=day_offset)
 
-def create_monthly_recurrence_bookings(user, room, form, bookings):
-    """
-    Функция для создания повторяющихся бронирований по месяцам с выбором дней.
-    
-    :param room: Room object (комната, которую бронируем)
-    :param form: Форма с данными бронирования
-    :param user: Пользователь, который делает бронирование
-    :param bookings: Список, куда добавляются созданные бронирования
-    :return: список созданных бронирований
-    """
-    # Получаем данные из формы
-    start_time = form.cleaned_data['start_time']
-    end_time = form.cleaned_data['end_time']
-    repeats = form.cleaned_data['repeats']  # Количество повторений
-    interval = form.cleaned_data['interval']  # Интервал между повторениями (в месяцах)
-    days_of_month = json.loads(form.cleaned_data['selected_days'])  # Массив с выбранными днями месяца, например, [1, 15, 31]
-    
-    # Обернем в транзакцию для атомарности
+                created_booking = create_single_booking(user, room, booking, bookings)
+                created_bookings.append(created_booking)
+
+    return created_bookings
+
+def create_monthly_recurrence_bookings(user, room, booking, interval, repeats, selected_days, bookings):
+    created_bookings = []
+    start = booking.start_time
+    end = booking.end_time
+
     with transaction.atomic():
         # Основной цикл для создания серий бронирований
-        for repeat in range(repeats):
+        for repeat in range(int(repeats)):
             # Вычисляем смещение по месяцам для текущей серии
             month_offset = repeat * interval
 
             # Итерируемся по дням месяца, когда должно быть событие
-            for day in days_of_month:
+            for day in selected_days:
+                
+                if booking.start_time >= start:
+                    created_booking = create_single_booking(user, room, booking, bookings)
+                    created_bookings.append(created_booking)
+
                 # Вычисляем текущий месяц и год
-                current_month = (start_time.month - 1 + month_offset) % 12 + 1
-                current_year = start_time.year + (start_time.month - 1 + month_offset) // 12
+                current_month = (start.month - 1 + month_offset) % 12 + 1
+                current_year = start.year + (start.month - 1 + month_offset) // 12
 
                 # Проверяем, сколько дней в текущем месяце
                 _, days_in_month = calendar.monthrange(current_year, current_month)
@@ -172,20 +141,13 @@ def create_monthly_recurrence_bookings(user, room, form, bookings):
 
                 # Вычисляем дату для каждого дня месяца в этой серии
                 try:
-                    current_start_time = start_time.replace(year=current_year, month=current_month, day=day)
-                    current_end_time = end_time.replace(year=current_year, month=current_month, day=day)
+                    booking.start_time = start.replace(year=current_year, month=current_month, day=day)
+                    booking.end_time = end.replace(year=current_year, month=current_month, day=day)
                 except ValueError:
                     # Если дата недопустима (например, 31 февраля), пропускаем этот день
                     continue
 
-                # Убедимся, что текущее время находится в будущем (если нет, пропускаем)
-                if current_start_time >= datetime.datetime.now():
-                    form.cleaned_data['start_time'] = current_start_time
-                    form.cleaned_data['end_time'] = current_end_time
-                    # Создаем бронирование на вычисленное время
-                    create_single_booking(user, room, form, bookings)
-
-    return bookings
+    return created_bookings
 
 def is_within_working_hours(room, start_time, end_time):
     return room.open_time <= start_time.time() and room.close_time >= end_time.time()

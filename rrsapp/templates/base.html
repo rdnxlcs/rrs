@@ -12,6 +12,9 @@
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet">
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales-all.global.min.js"></script>
 </head>
 
 <body>
@@ -28,11 +31,11 @@
           class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navcol-3">
         <ul class="navbar-nav mx-auto">
-          <li class="nav-item"><a class="nav-link {% block active-home %}{% endblock %}" href="#">Главная</a></li>
-          <li class="nav-item"><a class="nav-link {% block active-rooms %}{% endblock %}" href="#">Помещения</a></li>
-          <li class="nav-item"><a class="nav-link {% block active-about %}{% endblock %}" href="#">О нас</a></li>
+          <li class="nav-item"><a class="nav-link {% block active-home %}{% endblock %}" href="/">Главная</a></li>
+          <li class="nav-item"><a class="nav-link {% block active-rooms %}{% endblock %}" href="/rooms">Пространства</a></li>
+          <li class="nav-item"><a class="nav-link {% block active-about %}{% endblock %}" href="/about">О нас</a></li>
         </ul>
-        <a href="/personal" class="btn btn-primary" type="button">Личный кабинет</a>
+        <a href="/personal" class="btn {% block active-personal %}{% endblock %} btn-primary" type="button">Личный кабинет</a>
       </div>
     </div>
   </nav>
@@ -80,6 +83,11 @@
     </div>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+  <style>
+    .backdrop-brightness {
+      backdrop-filter: brightness(.5);
 
+    }
+  </style>
+</body>
 </html>

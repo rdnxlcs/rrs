@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block active-home %}active{% endblock %}
 {% block content %}
@@ -11,11 +12,11 @@
     </div>
     <div class="col-lg-6">
       <h1 class="display-5 fw-bold text-body-emphasis lh-1 mb-3">Cистема<br>Бронирования<br>Помещений</h1>
-      <p class="lead">Наш сайт предоставляет удобную систему для поиска и бронирования помещений для встреч,
+      <p class="lead">Сайт предоставляют удобную систему для поиска и бронирования помещений для встреч,
         конференций, семинаров и других мероприятий. Здесь вы можете легко найти подходящую комнату, ознакомиться с её
         характеристиками и забронировать её на удобное для вас время.</p>
       <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-        <button type="button" class="btn btn-primary btn-lg px-4 me-md-2">Забронировать</button>
+        <a href="/rooms" type="button" class="btn btn-primary btn-lg px-4 me-md-2">Забронировать</a>
       </div>
     </div>
   </div>
@@ -23,29 +24,32 @@
 
 <div class="container py-5">
   <div class="px-4 text-center">
-    <h1 class="display-5 fw-bold text-body-emphasis">Наши помещения</h1>
+    <h1 class="display-5 fw-bold text-body-emphasis">Наши пространства</h1>
     <div class="col-lg-6 mx-auto">
-      <p class="lead mb-4">Каждый тип комнаты адаптирован под ваши нужды, будь то деловые мероприятия или творческая
-        работа.</p>
+      <p class="lead mb-4">Кот – символ уюта и комфорта. На сайте и в пространствах.</p>
     </div>
   </div>
   <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4">
+    {% for room in rooms %}
     <div class="col">
       <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg"
-        style="background-image: url('https://lh6.googleusercontent.com/proxy/P6JPh928VFSn_OTTwSfxNuasTirCc69nZRYonIVJxNvaXCduSuF6BcFrJwNlLNZvZsB84Z4PLoZhKaVPWWONoa8bdX_JUKuOHbM-tknsH6rTYcVKxthbPjV_Z2rzS49QZAwvXj0qtUIvuGSNCNFE-pRiDGEhyQixkAWyiff6O9Pw712Ac5A8JDmUgENGTW088NsdV_lCxtpJg-w');">
-        <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-          <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">Спорт-зал</h3>
-          <ul class="d-flex list-unstyled mt-auto">
-            <li class="d-flex align-items-center me-3">
-              <small>Длинное описание на несколько слов</small>
+        style="background: url('{{ room.image }}') no-repeat center center / cover;">
+        <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1 backdrop-brightness">
+          <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">{{ room.name }}</h3>
+          <ul class="d-flex list-unstyled mt-auto justify-content-between">
+            <li class="">
+              <small>{{ room.open_time|time:"H:i" }} – {{ room.close_time|time:"H:i" }}</small>
             </li>
-            <li class="d-flex align-items-center">
-              <small>09:00<br>18:00</small>
+            <li class="">
+              {% if room.timebreak %}
+              <small>перерыв {{ room.timebreak|format_duration }}</small>
+              {% endif %}
             </li>
           </ul>
         </div>
       </div>
     </div>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}

@@ -1,16 +1,132 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block active-home %}active{% endblock %}
+{% block active-personal %}active{% endblock %}
 {% block content %}
-<div class="container py-3">
-  <h1 class="display-5 fw-bold">Личный кабинет</h1>
-  <p class="col-md-8 fs-4">{{ user.username }}</p>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-end">
+    <h1 class="display-5 fw-bold">Личный кабинет</h1>
+    <p class="fs-4">{{ user.username }}</p>
+  </div>
+  <div class="row mx-auto g-3 py-3">
+    <div class="col-8">
+      <div id='calendar' class="bg-light p-3 shadow rounded"></div>
+    </div>
+    <div class="col-4">
+      <div id='weeklist' class="bg-light p-3 shadow rounded h-100"></div>
+    </div>
+  </div>
+
+  <div class="py-3">
+    <form method="POST" action="{% url 'rrsapp:logout' %}">
+      {% csrf_token %}
+      <button class="btn btn-danger btn-lg" type="submit">Выйти из аккаунта</button>
+    </form>
+  </div>
 </div>
-<div class="container py-3">
-  <form method="POST" action="{% url 'rrsapp:logout' %}">
-    {% csrf_token %}
-    <button class="btn btn-danger btn-lg" type="submit">Выйти из аккаунта</button>
-  </form>
-</div>
+<script>
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+
+    // Передаем события из Django в JavaScript
+    var events = {{ events | safe }};  // Используем фильтр safe для вывода безопасного JSON
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',  // Инициализация календаря
+    events: events,  // Передаем события из Django
+    locale: 'ru',
+    firstDay: 1,
+    headerToolbar: {
+      left: 'title',  // Кнопки "предыдущий", "следующий", "сегодня"
+      right: 'today prev,next',  // Заголовок с текущим месяцем
+    },
+    footerToolbar: {
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    eventTimeFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      meridiem: false
+    },
+    views: {
+      dayGridMonth: { // Настройка представления месяца
+        titleFormat: { year: 'numeric', month: 'long' }
+      },
+      timeGridWeek: { // Настройка представления недели
+        slotDuration: '00:30', // Интервалы по часу
+        allDaySlot: false,
+        slotLabelFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }
+      },
+      timeGridDay: { // Настройка представления дня
+        slotDuration: '00:30', // Интервалы по 30 минут
+        allDaySlot: false,
+        slotLabelFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }
+      },
+    }
+  });
+
+  calendar.render();
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('weeklist');
+
+    // Передаем события из Django в JavaScript
+    var events = {{ events | safe }};  // Используем фильтр safe для вывода безопасного JSON
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'listWeek',  // Инициализация календаря
+    events: events,
+    locale: 'ru',
+    titleFormat: { day: 'numeric', month: 'long' },
+    firstDay: 1,
+    headerToolbar: {
+      left: 'title',
+      right: 'prev,next'
+    },
+    footerToolbar: {
+      right: 'today'
+    }, // Передаем события из Django
+    eventTimeFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      meridiem: false
+    },
+    views: {
+      listWeek: { // Список событий за неделю
+        buttonText: 'List Week' // Текст кнопки
+      }
+    }
+  });
+
+  calendar.render();
+  });
+</script>
+<style>
+  .fc-col-header-cell-cushion, .fc-daygrid-day-number {
+    text-decoration: none;
+    color: var(--bs-heading-color);
+  }
+  .fc-day-today {
+    background: rgba(var(--bs-secondary-rgb), .1)!important;
+  }
+  :root {
+    --fc-event-bg-color: #0d6efd;
+  }
+  .fc .fc-button-primary:focus {
+    box-shadow: none!important;
+  }
+  .fc-event-main-frame {
+    padding: .125rem;
+  }
+</style>
 {% endblock %}

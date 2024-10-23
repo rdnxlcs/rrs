@@ -146,7 +146,7 @@ class BookingForm(forms.ModelForm):
   repeats = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={
     'type': 'number',
     'class': 'form-control repeats',
-    'disabled': 'true',
+    'disabled': 'false',
     'value': '0'
     }),
     error_messages={
@@ -157,7 +157,7 @@ class BookingForm(forms.ModelForm):
   interval = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={
     'type': 'number',
     'class': 'form-control interval',
-    'disabled': 'true',
+    'disabled': 'false',
     'value': '0'
     }),
     error_messages={
@@ -176,10 +176,8 @@ class BookingForm(forms.ModelForm):
 
   selected_days = forms.CharField(required=False, widget=forms.TextInput(attrs={
     'class': 'form-control selected-days',
-    }),
-    error_messages={
-      'required': "Это поле обязательно для заполнения",
-    }
+    'hidden': 'true'
+    })
   )
 
   def clean_start_time(self):
