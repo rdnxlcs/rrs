@@ -14,6 +14,8 @@
 </head>
 
 <body>
+  <div style="display: none" id="json-data" data="{{ jsonerrors }}"></div>
+  <div style="display: none" id="enter" data="{{ enter }}"></div>
   <div class="d-flex flex-column modal modal-sheet position-static d-block bg-body-secondary p-4 py-md-5" tabindex="-1"
     role="dialog" id="modalSignin" style="height: 100vh;">
     <div class="h-100"></div>
@@ -24,26 +26,35 @@
         </div>
 
         <div class="modal-body p-5 pt-0">
-          <form method="post">
+          <form method="post" class="needs-validation">
             {% csrf_token %}
             <div class="form-floating mb-3">
               {{ form.username }}
               <label for="floatingInput">Имя пользователя</label>
+              <div class="invalid-feedback">
+                {% for error in errors.username %}
+                  {% for text in error %}
+                    {{ text }}<br>
+                  {% endfor %}
+                {% endfor %}
+
+                {{ enter }}
+              </div>
             </div>
             <div class="form-floating mb-3">
               {{ form.password }}
               <label for="floatingPassword">Пароль</label>
+              <div class="invalid-feedback">
+                {% for error in errors.password %}
+                  {% for text in error %}
+                    {{ text }}<br>
+                  {% endfor %}
+                {% endfor %}
+              </div>
             </div>
             <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Войти</button>
             <small class="text-body-secondary"><a href="/signup">Зарегистрируйтесь</a>, если у Вас нет аккаунта</small>
           </form>
-          {% if messages %}
-          <ul class="messages">
-            {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-              {% endfor %}
-          </ul>
-          {% endif %}
         </div>
       </div>
     </div>
@@ -98,5 +109,34 @@
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+<script>
+  function loadJson(selector) {
+    return JSON.parse(document.querySelector(selector).getAttribute('data'));
+  }
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (() => {
+    'use strict'
 
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('.needs-validation')
+    var errors = loadJson('#json-data');
+
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      for (let i = 0; i < Object.values(errors).length; i++) {
+        if (Object.values(errors)[i].length != 0) {
+          form[Object.keys(errors)[i]].classList.add('is-invalid')
+        }
+        else {
+          form[Object.keys(errors)[i]].classList.add('is-valid')
+        } 
+      }
+    })
+  })()
+
+  const forms = document.querySelectorAll('.needs-validation')
+  if (document.querySelector('#enter').getAttribute('data')) {
+    forms[0][1].classList.add('is-invalid')
+  }
+</script>
 </html>

@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
+import datetime
 
-from .models import User, Booking
+from .models import User, Booking, Room
 
 import re
 
@@ -111,7 +112,8 @@ class BookingForm(forms.ModelForm):
 
   start_time = forms.DateTimeField(required=True, widget=forms.DateTimeInput(attrs={
     'type': 'datetime-local',
-    'class': 'form-control'
+    'class': 'form-control',
+    'id': 'start_time'
     }),
     error_messages={
       'required': "Это поле обязательно для заполнения",
@@ -120,7 +122,8 @@ class BookingForm(forms.ModelForm):
 
   end_time = forms.DateTimeField(required=True, widget=forms.DateTimeInput(attrs={
     'type': 'datetime-local',
-    'class': 'form-control'
+    'class': 'form-control',
+    'id': 'end_time'
     }),
     error_messages={
       'required': "Это поле обязательно для заполнения",
@@ -167,6 +170,7 @@ class BookingForm(forms.ModelForm):
 
   comment = forms.CharField(required=False, widget=forms.Textarea(attrs={
     'class': 'form-control',
+    'id': 'comment',
     'placeholder': 'Укажите нюансы использования помещения, если таковые имеются'
     }),
     error_messages={
@@ -200,4 +204,178 @@ class BookingForm(forms.ModelForm):
     
     return end_time
   
+class DeleteBookingForm(forms.Form):
+  delete_all = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={
+    'type': 'checkbox',
+    'class': 'form-check-input'
+    }),
+  )
   
+  pk = forms.IntegerField(required=True, widget=forms.NumberInput(attrs={
+    'type': 'number',
+    'class': 'form-control',
+    'id': 'pk',
+    'hidden': 'false',
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+  tag = forms.CharField(required=True, widget=forms.TextInput(attrs={
+    'type': 'text',
+    'class': 'form-control',
+    'id': 'tag',
+    'hidden': 'false',
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+class ChangeBookingForm(forms.Form):
+  start_time = forms.DateTimeField(required=True, widget=forms.DateTimeInput(attrs={
+    'type': 'datetime-local',
+    'class': 'form-control',
+    'id': 'start_time'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+  end_time = forms.DateTimeField(required=True, widget=forms.DateTimeInput(attrs={
+    'type': 'datetime-local',
+    'class': 'form-control',
+    'id': 'end_time'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+  change_all = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={
+    'type': 'checkbox',
+    'class': 'form-check-input',
+    }),
+  )
+
+  pk = forms.IntegerField(required=True, widget=forms.NumberInput(attrs={
+    'type': 'number',
+    'class': 'form-control',
+    'id': 'change_pk',
+    'hidden': 'true'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+  tag = forms.CharField(required=True, widget=forms.TextInput(attrs={
+    'type': 'text',
+    'class': 'form-control',
+    'id': 'change_tag',
+    'hidden': 'true'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+  comment = forms.CharField(required=False, widget=forms.Textarea(attrs={
+    'class': 'form-control',
+    'id': 'comment',
+    'rows': '2',
+    'placeholder': 'Укажите нюансы использования помещения, если таковые имеются'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    }
+  )
+
+class CreateRoomForm(forms.Form):
+  class Meta:
+    model = Room  # Укажите вашу модель
+    fields = ['name', 'timebreak', 'open_time', 'close_time', 'image', 'comment']
+
+  # Название помещения
+  name = forms.CharField(
+    required=True,
+    widget=forms.TextInput(attrs={
+      'class': 'form-control rounded-3',
+      'id': 'name',
+      'name': 'name',
+      'placeholder': 'Введите название помещения'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    })
+
+  timebreak = forms.TimeField(
+    required=True,
+    widget=forms.TimeInput(attrs={
+      'type': 'time',
+      'class': 'form-control',
+      'id': 'timebreak',
+      'name': 'timebreak'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    })
+
+    # Время открытия помещения
+  open_time = forms.TimeField(
+    required=True,
+    widget=forms.TimeInput(attrs={
+      'type': 'time',
+      'class': 'form-control',
+      'id': 'open_time',
+      'name': 'open_time'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    })
+
+    # Время закрытия помещения (часы и минуты)
+  close_time = forms.TimeField(
+    required=True,
+    widget=forms.TimeInput(attrs={
+      'type': 'time',
+      'class': 'form-control',
+      'id': 'close_time',
+      'name': 'close_time'
+    }),
+    error_messages={
+      'required': "Это поле обязательно для заполнения",
+    })
+
+    # Файл изображения помещения
+  image = forms.FileField(
+    required=False,
+    widget=forms.ClearableFileInput(attrs={
+      'class': 'form-control',
+      'name': 'image',
+      'id': 'image',
+    }))
+
+    # Комментарий к помещению
+  comment = forms.CharField(
+    required=False,
+    widget=forms.Textarea(attrs={
+      'class': 'form-control rounded-3',
+      'id': 'comment',
+      'name': 'comment',
+      'placeholder': 'Добавьте комментарий (необязательно)',
+      'rows': 3,
+    }))
+
+  # Валидация поля timebreak
+  def clean_timebreak(self):
+    timebreak = self.cleaned_data.get('timebreak')  # Получаем значение как время
+    if timebreak:
+      # Преобразуем время в timedelta
+      timebreak_delta = datetime.timedelta(hours=timebreak.hour, minutes=timebreak.minute)
+      if timebreak_delta <= datetime.timedelta(minutes=0):
+        raise forms.ValidationError("Перерыв между бронированиями должен быть положительным.")
+      return timebreak_delta
+    raise forms.ValidationError("Введите корректный перерыв.")

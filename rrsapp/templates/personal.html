@@ -3,7 +3,35 @@
 
 {% block active-personal %}active{% endblock %}
 {% block content %}
-<div class="container py-5">
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Удаление бронирования</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {{ form.pk }}
+          {{ form.tag }}
+          <div class="form-check">
+            {{ form.delete_all }}
+            <label class="form-check-label">
+              Удалить все последующие повторяющиеся бронирования
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-danger" name="delete">Удалить</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="container-xxl py-5">
   <div class="d-flex justify-content-between align-items-end">
     <h1 class="display-5 fw-bold">Личный кабинет</h1>
     <p class="fs-4">{{ user.username }}</p>
@@ -13,7 +41,44 @@
       <div id='calendar' class="bg-light p-3 shadow rounded"></div>
     </div>
     <div class="col-4">
-      <div id='weeklist' class="bg-light p-3 shadow rounded h-100"></div>
+      <div class="bg-light p-3 mb-3 shadow rounded">
+        <h2 class="mb-4" id="room">-</h2>
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="firstName" class="form-label">Дата и время бронирования</label>
+              {{ change_form.start_time }}
+            </div>
+            <div class="col-12">
+              <label for="firstName" class="form-label">Дата и время окончания</label>
+              {{ change_form.end_time }}
+            </div>
+            <div class="col-12">
+              <label for="firstName" class="form-label">Комментарий</label>
+              {{ change_form.comment }}
+            </div>
+            <div class="col-12 d-none">
+              <div class="form-check">
+                {{ change_form.change_all }}
+                <label class="form-check-label">
+                  Изменить все последующие повторяющиеся бронирования
+                </label>
+              </div>
+            </div>
+            {{ change_form.pk }}
+            {{ change_form.tag }}
+            <div class="col-12">
+              <button class="w-100 btn btn-primary btn-lg" type="submit" name="change">Изменить</button>
+            </div>
+            <hr class="my-4">
+            <div class="col-12 my-0">
+              <button class="w-100 btn btn-danger btn-lg" id="delete" data-toggle="modal" data-target="#exampleModal" type="button">Удалить</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div id='weeklist' class="bg-light p-3 shadow rounded"></div>
     </div>
   </div>
 
@@ -25,6 +90,19 @@
   </div>
 </div>
 <script>
+  function formatDateToInputValue(date) {
+    // Получаем год, месяц, день
+    var year = date.getFullYear();
+    var month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы в JS начинаются с 0
+    var day = String(date.getDate()).padStart(2, '0');
+
+    // Получаем часы и минуты
+    var hours = String(date.getHours()).padStart(2, '0');
+    var minutes = String(date.getMinutes()).padStart(2, '0');
+
+    // Возвращаем строку в формате "YYYY-MM-DDTHH:MM"
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
 
   document.addEventListener('DOMContentLoaded', function () {
     var calendarEl = document.getElementById('calendar');
@@ -34,6 +112,17 @@
 
   var calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',  // Инициализация календаря
+    eventClick: function (info) {
+      console.log(info.event.extendedProps.comment, info.event.extendedProps.tag, info.event.end);
+      $('#start_time').val(formatDateToInputValue(info.event.start))
+      $('#end_time').val(formatDateToInputValue(info.event.end))
+      $('#comment').val(info.event.extendedProps.comment)
+      $('#pk').val(info.event.extendedProps.pk)
+      $('#tag').val(info.event.extendedProps.tag)
+      $('#change_pk').val(info.event.extendedProps.pk)
+      $('#change_tag').val(info.event.extendedProps.tag)
+      $('#room').html(info.event.title)
+    },
     events: events,  // Передаем события из Django
     locale: 'ru',
     firstDay: 1,
@@ -110,21 +199,48 @@
 
   calendar.render();
   });
+
+  document.getElementById('delete').addEventListener('click', function() {
+    $('#exampleModal').modal('show');
+  });
 </script>
 <style>
-  .fc-col-header-cell-cushion, .fc-daygrid-day-number {
+  .fc-col-header-cell-cushion,
+  .fc-daygrid-day-number,
+  .fc-list-day-text,
+  .fc-list-day-side-text {
     text-decoration: none;
     color: var(--bs-heading-color);
   }
+
   .fc-day-today {
-    background: rgba(var(--bs-secondary-rgb), .1)!important;
+    background: rgba(var(--bs-secondary-rgb), .1) !important;
   }
+
   :root {
     --fc-event-bg-color: #0d6efd;
+    --fc-event-border-color: #0d6efd;
+
+    --fc-event-hover-bg-color: black;
+    --fc-event-hover-border-color: black;
+
+    --fc-button-bg-color: rgba(var(--bs-secondary-rgb));
+    --fc-button-border-color: rgba(var(--bs-secondary-rgb));
+    --fc-button-active-bg-color: #565e64;
+    --fc-button-active-border-color: #565e64;
+    --fc-button-hover-bg-color: #565e64;
+    --fc-button-hover-border-color: #565e64;
   }
+
   .fc .fc-button-primary:focus {
-    box-shadow: none!important;
+    box-shadow: none !important;
   }
+
+  .fc-timegrid-event:hover {
+    background: #0a58ca !important;
+    border-color: #0a53be !important;
+  }
+
   .fc-event-main-frame {
     padding: .125rem;
   }

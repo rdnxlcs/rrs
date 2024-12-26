@@ -1,14 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 
-from .forms import UserSignUpForm, UserSignInForm, BookingForm
+from .forms import UserSignUpForm, UserSignInForm, BookingForm, DeleteBookingForm, ChangeBookingForm, CreateRoomForm
 from .models import Room, Booking
 from .mvp import *
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 import json
-import openai
+import os
 '''
 new_room = Room(name="Гей качалка", timebreak=datetime.timedelta(minutes=0), open_time=datetime.time(0, 0), close_time=datetime.time(23, 59))
 new_room.save()
@@ -44,6 +46,7 @@ def signup(request):
   return render(request, 'signup.html', context)
 
 def signin(request):
+  enter = ''
   if request.method == 'POST':
     form = UserSignInForm(request.POST)
     if form.is_valid():
@@ -52,38 +55,92 @@ def signin(request):
       user = authenticate(request, username=username, password=password)
       if user is not None:
         login(request, user)
-        messages.success(request, f"Добро пожаловать, {username}!")
         return redirect('/personal')
       else:
-        messages.error(request, "Неверное имя пользователя или пароль")
+        enter = "Неверное имя пользователя или пароль"
+        print(enter)
     else:
-      messages.error(request, "Некорректные данные")
+      enter = "Некорректные данные"
+      print(enter)
   else:
     form = UserSignInForm()
 
-  return render(request, 'signin.html', {'form': form})
-    
+  context = {
+    'form': form,
+    'jsonerrors': json.dumps(form.errors),
+    'errors': form.errors.as_data(),
+    'enter': enter
+  }
+
+  return render(request, 'signin.html', context)
+
+@login_required
 def personal(request):
   user = request.user
 
   bookings = Booking.objects.filter(user=user)
 
+  form = DeleteBookingForm()
+
+  change_form = ChangeBookingForm()
+
+  if request.method == 'POST':
+    form = DeleteBookingForm(request.POST)
+    change_form = ChangeBookingForm(request.POST)
+    print(change_form.errors.as_data())
+
+    if 'delete' in request.POST:
+      print('delete')
+      if form.is_valid():
+        delete_all = form.cleaned_data['delete_all']
+        if delete_all:
+          current_booking = Booking.objects.get(pk=form.cleaned_data['pk'])
+          bookings = Booking.objects.filter(tag=form.cleaned_data['tag'])
+          for booking in bookings:
+            if booking.start_time >= current_booking.start_time: 
+              print(booking, 'delete_all')
+              booking.delete()
+        else:
+          booking = Booking.objects.get(pk=form.cleaned_data['pk'])
+          print(booking, delete_all)
+          booking.delete()
+        return redirect('/personal')
+    
+    if 'change' in request.POST:
+      print('change')
+      if change_form.is_valid():
+        change_all = change_form.cleaned_data['change_all']
+
+        booking = Booking.objects.get(pk=change_form.cleaned_data['pk'])
+        booking.start_time = change_form.cleaned_data['start_time']
+        booking.end_time = change_form.cleaned_data['end_time']
+        booking.comment = change_form.cleaned_data['comment']
+        booking.save()
+        return redirect('/personal')
+      
+
+
   events = []
   for booking in bookings:
-      events.append({
-          'title': booking.room.name,  # Название события
-          'start': booking.start_time.strftime("%Y-%m-%dT%H:%M:%S"),  # Начало события
-          'end': booking.end_time.strftime("%Y-%m-%dT%H:%M:%S"),  # Конец события
-          'description': booking.comment,  # Дополнительная информация
-      })
+    events.append({
+      'title': booking.room.name,  # Название события
+      'start': booking.start_time.strftime("%Y-%m-%dT%H:%M:%S"),  # Начало события
+      'end': booking.end_time.strftime("%Y-%m-%dT%H:%M:%S"),  # Конец события
+      'comment': booking.comment,  # Дополнительная информация
+      'pk': booking.pk,
+      'tag': booking.tag,
+    })
 
   context = {
     'user': user,
     'bookings': bookings,
     'events': json.dumps(events),
+    'form': form,
+    'change_form': change_form,
   }
   return render(request, 'personal.html', context)
 
+@login_required
 def booking(request, room_id):
   room = Room.objects.get(id=room_id) # брать из строки
   created_bookings = [RoomAvailability(False, '', '')]
@@ -110,8 +167,6 @@ def booking(request, room_id):
 
       created_bookings = create_booking(user, room, booking, recurrence_type, interval, repeats, selected_days, bookings)
 
-      print(created_bookings, repeats)
-
       if any([booking.availability for booking in created_bookings]):
         return redirect('/personal') # Перенаправляем на страницу успеха
   else:
@@ -122,14 +177,14 @@ def booking(request, room_id):
     'jsonerrors': json.dumps(form.errors),
     'errors': form.errors.as_data(), # Логическая валидация
     'jsonbookings': json.dumps({  
-      'strat_time': [booking.message for booking in created_bookings if booking.field == 'strat_time'],
-      'repeats': [booking.message for booking in created_bookings if booking.field == 'repeats'],
-      'interval': [booking.message for booking in created_bookings if booking.field == 'interval'],
+      'start_time': list(set([booking.message for booking in created_bookings if booking.field == 'start_time'])),
+      'repeats': list(set([booking.message for booking in created_bookings if booking.field == 'repeats'])),
+      'interval': list(set([booking.message for booking in created_bookings if booking.field == 'interval'])),
     }), # Фактическая валидация
     'bookings': {  
-      'strat_time': [booking.message for booking in created_bookings if booking.field == 'strat_time'],
-      'repeats': [booking.message for booking in created_bookings if booking.field == 'repeats'],
-      'interval': [booking.message for booking in created_bookings if booking.field == 'interval'],
+      'start_time': list(set([booking.message for booking in created_bookings if booking.field == 'start_time'])),
+      'repeats': list(set([booking.message for booking in created_bookings if booking.field == 'repeats'])),
+      'interval': list(set([booking.message for booking in created_bookings if booking.field == 'interval'])),
     }, # Фактическая валидация
     'room': room,
     'days': [i for i in range(1, 32)],
@@ -137,3 +192,46 @@ def booking(request, room_id):
   }
   return render(request, 'booking.html', context)
 
+def newroom(request):
+  form = CreateRoomForm()
+
+  if request.method == 'POST':
+    form = CreateRoomForm(request.POST, request.FILES)
+    if form.is_valid():
+      image_file = request.FILES['image']
+      dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+
+      os.makedirs(dir, exist_ok=True)
+
+      file_path = os.path.join(dir, image_file.name)
+
+      with open(file_path, 'wb') as f:
+        for chunk in image_file.chunks():
+            f.write(chunk)
+
+      name = form.cleaned_data['name']
+      timebreak = form.cleaned_data['timebreak']
+      open_time = form.cleaned_data['open_time']
+      close_time = form.cleaned_data['close_time']
+      image = 'static/uploads/' + str(form.cleaned_data['image'])
+      comment = form.cleaned_data['comment']
+
+      room = Room(name=name, timebreak=timebreak, open_time=open_time, close_time=close_time, image=image, comment=comment)
+
+      room.pk = None
+      room.save()
+ 
+      return redirect('/rooms') #admpersonal
+  else:
+    form = CreateRoomForm()
+  print(form.errors.as_data())
+  context = {
+    'form': form,
+    'jsonerrors': json.dumps(form.errors),
+    'errors': form.errors.as_data(), # Логическая валидация
+  }
+
+  return render(request, 'newroom.html', context)
+
+def pptx(request):
+  return render(request, 'pptx.html')

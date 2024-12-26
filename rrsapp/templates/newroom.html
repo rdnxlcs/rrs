@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block active-home %}active{% endblock %}
+{% block content %}
+<div style="display: none" id="json-data" data="{{ jsonerrors }}"></div>
+<div class="container py-5">
+  <main>
+    <div class="row g-5">
+      <div class="col-md-5 col-lg-4 order-md-last">
+        <img class="w-100 rounded" src="/{{ room.image }}">
+        <div class="py-3">
+          <div class="d-flex justify-content-between">
+            <h4>{{ room.name }}</h4>
+            <p><span class="badge text-bg-primary">{{ room.open_time|time:"H:i" }} – {{ room.close_time|time:"H:i"
+                }}</span></p>
+          </div>
+          {% if room.timebreak %}
+          <p><span class="badge text-bg-danger">перерыв {{ room.timebreak|format_duration }}</span></p>
+          {% endif %}
+        </div>
+        <p>
+          {{ room.comment }}
+        </p>
+      </div>
+      <div class="col-md-7 col-lg-8">
+        <div class="">
+          <h1 class="display-5 fw-bold">{{ room.name }}</h1>
+          <p class="col-md-8 fs-4">Новое помещение</p>
+        </div>
+        <form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="firstName" class="form-label">Название помещения</label>
+              {{ form.name }}
+              <div class="invalid-feedback">
+                {% for error in errors.name %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.name %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="lastName" class="form-label">Перерыв между бронированиями</label>
+              {{ form.timebreak }}
+              <div class="invalid-feedback">
+                {% for error in errors.timebreak %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.timebreak %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="lastName" class="form-label">Открытие</label>
+              {{ form.open_time }}
+              <div class="invalid-feedback">
+                {% for error in errors.open_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.open_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label for="lastName" class="form-label">Закрытие</label>
+              {{ form.close_time }}
+              <div class="invalid-feedback">
+                {% for error in errors.close_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.close_time %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-12">
+              <label for="lastName" class="form-label">Повторить</label>
+              {{ form.image }}
+              <div class="invalid-feedback">
+                {% for error in errors.image %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.image %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="username" class="form-label">Описание</label>
+              {{ form.comment }}
+              <div class="invalid-feedback">
+                {% for error in errors.comment %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+
+                {% for error in bookings.comment %}
+                {% for text in error %}
+                {{ text }}<br>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <button class="w-100 btn btn-primary btn-lg" type="submit">Забронировать</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+
+
+  function loadJson(selector) {
+    return JSON.parse(document.querySelector(selector).getAttribute('data'));
+  }
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (() => {
+    'use strict'
+
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('.needs-validation')
+    var errors = loadJson('#json-data');
+
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      for (let i = 0; i < Object.values(errors).length; i++) {
+        if (Object.values(errors)[i].length != 0) {
+          form[Object.keys(errors)[i]].classList.add('is-invalid')
+        }
+      }
+    })
+
+  })()
+
+</script>
+{% endblock %}

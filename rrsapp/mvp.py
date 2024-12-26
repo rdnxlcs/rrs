@@ -42,8 +42,6 @@ def create_booking(user, room, booking, recurrence_type, interval, repeats, sele
     elif recurrence_type == 'bymonths':
         created_bookings = create_monthly_recurrence_bookings(user, room, booking, interval, repeats, selected_days, bookings)
     return created_bookings
-        
-
 
 def create_single_booking(user, room, booking, bookings): # Готово
     room_availabilityis = is_room_available(user, room, booking, bookings)
@@ -167,3 +165,23 @@ def delete_booking(user, room, start_time, bookings):
         print(f"Бронирование комнаты {room.name} для пользователя {user.name} на {start_time} удалено.")
     else:
         print(f"Бронирование для комнаты {room.name} на {start_time} не найдено.")
+
+def change_booking(booking, pk, tag):
+    if change_form.is_valid():
+        change_all = change_form.cleaned_data['change_all']
+        if change_all:
+          current_booking = Booking.objects.get(pk=change_form.cleaned_data['pk'])
+          bookings = Booking.objects.filter(tag=change_form.cleaned_data['tag'])
+          for booking in bookings:
+            if booking.start_time >= current_booking.start_time: 
+              booking.start_time = change_form.cleaned_data['start_time']
+              booking.end_time = change_form.cleaned_data['end_time']
+              booking.comment = change_form.cleaned_data['comment']
+              booking.save()
+              
+        else:
+          booking = Booking.objects.get(pk=change_form.cleaned_data['pk'])
+          booking.start_time = change_form.cleaned_data['start_time']
+          booking.end_time = change_form.cleaned_data['end_time']
+          booking.comment = change_form.cleaned_data['comment']
+          booking.save()

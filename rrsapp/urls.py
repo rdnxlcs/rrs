@@ -12,5 +12,7 @@ urlpatterns = [
   path('booking/<int:room_id>/', views.booking, name='booking'),
   path('signin', views.signin, name='signin'),
   path('signup', views.signup, name='signup'),
+  path('newroom', views.newroom, name='newroom'),
+  path('pptx', views.pptx, name='pptx'),
   path('logout', LogoutView.as_view(), name='logout')
 ]
